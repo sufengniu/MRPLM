@@ -1,4 +1,4 @@
-###PLM for Bio informatic based Map Reduce frameworki###
+###PLM for Bio informatic based Map Reduce framework
 
 the gpu offload part is marked in PLM.java:
 there are two native functions which required offload on GPU:
