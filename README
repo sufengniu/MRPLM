@@ -1,0 +1,8 @@
+###PLM for Bio informatic based Map Reduce frameworki###
+
+the gpu offload part is marked in PLM.java:
+there are two native functions which required offload on GPU:
+1. XTWX at line 128 to 139
+2. line 196 to 203
+
+the cuda code is located at plmAcc dir, which is under construction
