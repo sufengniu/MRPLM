@@ -5,14 +5,14 @@ LA_HOME = /home/sniu/lapack-3.5.0
 
 CC 	= gcc
 NVCC	= nvcc
-CFLAGS	:= -m64 -Wall 
-NFLAGS 	:= -m64 
-LINK	= 
+CFLAGS	:= -m64 -Wall -fPIC 
+NFLAGS 	:= -arch=sm_20 -Xcompiler -fPIC 
+LINK	= -shared
 INC	= -I. -I${JAVA_HOME}/include/ -I${JAVA_HOME}/include/linux/ -I$(LA_HOME)/lapacke/include/ -I${CUDA_INSTALL_PATH}/include/ -I/home/sniu/CBLAS/include/
-TARGET	= jniWrapper 
+TARGET	= libjniWrapper.so
 
 LIBS    := -L$(LA_HOME) -L/home/sniu/CBLAS/lib -L${CUDA_INSTALL_PATH}/lib64
-LIBS	+= -lm -llapacke -llapack -lcblas -lblas -lgfortran -lrt
+LIBS	+= -lm -llapacke -llapack -lblas -lgfortran -lrt
 LIBS	+= -lcudart -lcublas
 
 ifeq ($(dbg),1)
@@ -21,10 +21,10 @@ else
 	CFLAGS += -O3
 endif
 
-OBJS    = wls_acc.o \
-	  utils.o \
+OBJS    = jniWrapper.o \
 	  cholesky_inv.o \
-	  jniWrapper.o
+	  wls_acc.o \
+	  utils.o
 
 all: $(TARGET)
 
@@ -39,9 +39,9 @@ cholesky_inv.o: cholesky_inv.c cholesky_inv.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(INC)
 
 wls_acc.o: wls_acc.cu wls_acc.h utils.h define_t.h 
-	$(NVCC) $(NFLAGS) -c $< -o $@ $(INC)
+	$(NVCC) $(NFLAGS) --shared -c $< -dlink -o $@ $(INC)
 
-utils.o: utils.c utils.h define_t.h
+utils.o: utils.cpp utils.h define_t.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(INC)	
 
 clean:

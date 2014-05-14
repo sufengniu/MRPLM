@@ -3,25 +3,21 @@
 
 #include "jniWrapper.h"
 
-int main()
-{
-
-	return 0;
-}
-
-
 // output: out_beta
 JNIEXPORT void JNICALL Java_jniWrapper_wlsAcc
 (JNIEnv *env, jobject thisObj, jdoubleArray inJNIWeights, jdoubleArray outJNIY, jdoubleArray outJNIBeta, jint y_rows, jint y_cols) {
 
 	// Convert the incoming JNI jintarray to C's jint[]
-	jdouble *wts = (*env)->GetDoubleArrayElements(env, inJNIWeights, NULL);
+/*	jdouble *wts = (*env)->GetDoubleArrayElements(env, inJNIWeights, NULL);
 	
 	jsize length = (*env)->GetArrayLength(env, inJNIWeights);
 
 	jdouble *y = (*env)->GetDoubleArrayElements(env, outJNIY, NULL);
 	jdouble *out_beta = (*env)->GetDoubleArrayElements(env, outJNIBeta, NULL);
-	
+*/
+	double *wts = (double *)calloc((y_rows*y_cols),sizeof(double));
+	double *y = (double *)calloc((y_rows*y_cols),sizeof(double));	
+	double *out_beta = (double *)calloc((y_rows+y_cols),sizeof(double));
 
 	/* application code here */
 	wls_gpu(y_cols, y_rows, wts, y, out_beta);

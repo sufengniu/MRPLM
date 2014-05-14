@@ -1,6 +1,7 @@
 #include "utils.h"
 
-void gpu_XTWY(int_t y_rows, int_t y_cols, double *wts,double *y, double *xtwy){
+void gpu_XTWY(int_t y_rows, int_t y_cols, double *wts,double *y, double *xtwy)
+{
 
 	int_t i,j;
 
