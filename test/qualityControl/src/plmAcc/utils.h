@@ -1,3 +1,6 @@
+#ifndef UTILS_H_
+#define UTILS_H_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
@@ -20,5 +23,4 @@ void host_D_from_Dtemp(double* h_D, double* h_D_temp, int_t y_cols, int_t y_rows
 
 void print_mat(double* A, int_t y_cols, int_t y_rows);
 
-extern "C" int Choleski_inverse(double *X, double *Xinv, double *work, int n, int upperonly);
-
+#endif

@@ -1,4 +1,7 @@
 /*start*/
+#ifndef DEFINE_T_H_
+#define DEFINE_T_H_
+
 #define TOTAL_SIZE 	70000
 #define BLOCKS_NUM	4	//should be divisble by TOTAL_SIZE
 #define BLOCK_SIZE	(TOTAL_SIZE/BLOCKS_NUM)
@@ -18,4 +21,5 @@ typedef long int int_t;
 
 #define CPU_COMPUTE
 
+#endif
 /*end*/

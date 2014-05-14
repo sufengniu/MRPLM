@@ -1,15 +1,22 @@
 #include <jni.h>
 #include <stdio.h>
-#include <time.h>
 
 #include "jniWrapper.h"
+
+int main()
+{
+
+	return 0;
+}
+
 
 // output: out_beta
 JNIEXPORT void JNICALL Java_jniWrapper_wlsAcc
 (JNIEnv *env, jobject thisObj, jdoubleArray inJNIWeights, jdoubleArray outJNIY, jdoubleArray outJNIBeta, jint y_rows, jint y_cols) {
+
 	// Convert the incoming JNI jintarray to C's jint[]
 	jdouble *wts = (*env)->GetDoubleArrayElements(env, inJNIWeights, NULL);
-	if (NULL == wts) return NULL;
+	
 	jsize length = (*env)->GetArrayLength(env, inJNIWeights);
 
 	jdouble *y = (*env)->GetDoubleArrayElements(env, outJNIY, NULL);
@@ -27,7 +34,7 @@ JNIEXPORT void JNICALL Java_jniWrapper_wlsAcc
 	(*env)->SetDoubleArrayRegion(env, outJNIArray, 0 , y_rows+y_cols, outArray);  // copy
 	return outJNIArray;
 */
-	return;
+
 }
 
 

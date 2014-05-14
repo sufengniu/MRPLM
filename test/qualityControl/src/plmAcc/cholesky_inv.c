@@ -1,4 +1,4 @@
-#include "matrix_functions.h"
+#include "cholesky_inv.h"
 
 static int use_lapack = 1;
 

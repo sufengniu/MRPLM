@@ -1,4 +1,4 @@
-#include "test_cuda.h"
+#include "wls_acc.h"
 
 //device memory
 double *d_wts, *d_xtwy, *d_out_beta_gpu, *d_Ainv, *d_B, *d_C, *d_D_temp, *d_AinvB, *d_CAinvB, *d_CAinv, *d_Q, *d_P_block, *d_P_trans_block;
@@ -101,7 +101,7 @@ __global__ void Kernel_outbeta_P_trans (double *d_P_block, double* d_xtwy, doubl
 	}
 }
 
-extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, double* out_beta_gpu)
+void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, double* out_beta_gpu)
 {
 	struct timeval start, end;
 	long utime;	
