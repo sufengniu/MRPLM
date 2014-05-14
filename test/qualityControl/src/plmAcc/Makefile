@@ -3,12 +3,12 @@ CUDA_HOME = /usr/local/cuda-5.5
 CC 	= gcc
 NVCC	= nvcc
 CLFAGS	:= -Wall -fPIC
-LINK	:= -shared -Wl
+LINK	:= -shared 
 INC	:= -I${JAVA_HOME}/include -I${JAVA_HOME}/include/linux -I$(LA_HOME)/lapacke/include -I$(CUDA_HOME)/include
 TARGET	= jniWrapper 
 
 LIBS	:= -lm -llapacke -llapack -lblas -lgfortran
-LIBS	+= -L(LA_HOME) -L/usr/lib -L$(CUDA_HOME)/lib64
+LIBS	+= -L$(LA_HOME) -L/usr/lib -L$(CUDA_HOME)/lib64
 
 ifeq ($(dbg),1)
 	CFLAGS += -g
@@ -18,10 +18,11 @@ endif
 
 OBJS    = cholesky_inv.o \
 	  utils.o \
-	  wls_acc.o
+	  wls_acc.o \
+	  jniWrapper.o
 
 all:
-	$(CC) $(CFLAGS) -o libjniWrapper.so $(INC) *.o
+	$(CC) $(CFLAGS) $(LINK) -o libjniWrapper.so $(OBJS) $(LIBS)
 
 jniWrapper.o: jniWrapper.c jniWrapper.h define_t.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(INC)
@@ -36,4 +37,4 @@ utils.o: utils.cpp utils.h define_t.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(INC)	
 
 clean:
-	rm *.o *.so
+	rm -rf *.o *.so
