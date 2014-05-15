@@ -20,7 +20,7 @@ static int use_lapack = 1;
  **
  *********************************************************************/
 
-int Choleski_decompose(double *X, double *L, int n, int lapack){
+static int Choleski_decompose(double *X, double *L, int n, int lapack){
 	int i,j,error_code;
 	char upper = 'U';
 
@@ -66,7 +66,7 @@ int Choleski_decompose(double *X, double *L, int n, int lapack){
  **
  **********************************************************************/
 
-int Choleski_2_inverse(double *X, double *Xinv, int n,int upperonly, int lapack){
+static int Choleski_2_inverse(double *X, double *Xinv, int n,int upperonly, int lapack){
 
 	int i,j ,error_code=0,inverseonly;
 	double d =0.0;
