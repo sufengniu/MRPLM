@@ -8,6 +8,7 @@ public class PLM {
     }
     /* list accelerated functions by using JNI */
     private native double[] wlsAcc(double[] weights, int y_rows, int y_cols);
+    private native double[] seAcc(double[] weights, int y_rows, int y_cols);
 
     MedianSteps medianSteps = new MedianSteps();
 
@@ -57,22 +58,22 @@ public class PLM {
 
         int rows = y_rows * y_cols;
 
-		/* intially use equal weights */
-        for (int i = 0; i < rows; i++) {
+	/* intially use equal weights */
+	for (int i = 0; i < rows; i++) {
             weights[i] = 1.0;
         }
 
 
-		/* starting matrix */
-/*        for (int i = 0; i < y_rows; i++) {
+	/* starting matrix */
+	/*        for (int i = 0; i < y_rows; i++) {
             for (int j = 0; j < y_cols; j++) {
                 resids[j * y_rows + i] = y[j * y_rows + i];
             }
         }*/
 
 
-		/* sweep columns (ie chip effects) */
-        for (int j = 0; j < y_cols; j++) {
+	/* sweep columns (ie chip effects) */
+	for (int j = 0; j < y_cols; j++) {
             out_beta[j] = 0.0;
             double sumweights = 0.0;
             for (int i = 0; i < y_rows; i++) {
@@ -85,7 +86,7 @@ public class PLM {
             }
         }
 
-		/* sweep rows  (ie probe effects) */
+	/* sweep rows  (ie probe effects) */
         for (int i = 0; i < y_rows; i++) {
             rowmeans[i] = 0.0;
             double sumweights = 0.0;
@@ -117,7 +118,7 @@ public class PLM {
                 weights[i] = PsiFunction.huber(resids[i] / scale, psi_k, 0);  /* psi_huber(resids[i]/scale,k,0); */
             }
 
-			/* weighted least squares */
+		/* weighted least squares */
 
             for (int i = 0; i < xtwx.length; i++) {
                 xtwx[i] = 0.0;
@@ -137,9 +138,9 @@ public class PLM {
                     out_beta[i] += xtwx[j * (y_rows + y_cols - 1) + i] * xtwy[j];
                 }
             }*/
-            out_beta = jniWrapper().wlsAcc(weights, y_rows, y_cols);
+            out_beta = jniWrapper().wlsAcc(weights, y, out_beta, y_rows, y_cols);
 
-			/* residuals */
+	    /* residuals */
 
             for (int i = 0; i < y_rows - 1; i++) {
                 for (int j = 0; j < y_cols; j++) {
@@ -192,8 +193,8 @@ public class PLM {
         RMSEw = Math.sqrt(RMSEw / (double) (n - p));
         //residSE[0] =  RMSEw;
 
-        /***************** GPU offload part ***************/
-        XTWX(y_rows, y_cols, weights, XTX);
+	/***************** GPU offload part ***************/
+/*	XTWX(y_rows, y_cols, weights, XTX);
         if (y_rows > 1) {
             XTWXinv(y_rows, y_cols, XTX);
         } else {
@@ -201,7 +202,7 @@ public class PLM {
                 XTX[i * p + i] = 1.0 / XTX[i * p + i];
             }
         }
-
+*/
         for (int i = 0; i < p; i++) {
             se_estimates[i] = RMSEw * Math.sqrt(XTX[i * p + i]);
         }
