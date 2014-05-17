@@ -1,8 +1,18 @@
-###PLM for Bio informatic based Map Reduce framework
+to run the hadoop, first ssh to namenode, then, submit the job
 
-the gpu offload part is marked in PLM.java:
-there are two native functions which required offload on GPU:
-1. XTWX at line 128 to 139
-2. line 196 to 203
 
-the cuda code is located at plmAcc dir, which is under construction
+
+
+// Added to the file to cache
+DistributedCache.createSymlink(conf);
+DistributedCache.addCacheFile(new URI(<path>/sample.so#sample.so"), conf);
+
+// adding the current dir to java library path.
+conf.set("mapred.map.child.java.opts", "-Djava.library.path=.");
+
+
+
+
+
+
+hadoop jar hadoop-0.20.2-dev-examples.jar teragen -Dmapred.map.child.java.opts=-Djava.library.path=/tmp 10000000 /teragenso

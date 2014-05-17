@@ -7,7 +7,7 @@ public class PLM {
         System.loadLibrary("jniWrapper");
     }
     /* list accelerated functions by using JNI */
-    private native double[] wlsAcc(double[] weights, int y_rows, int y_cols);
+    private native void wlsAcc(double[] weights, int y_rows, int y_cols);
     private native double[] seAcc(double[] weights, int y_rows, int y_cols);
 
     MedianSteps medianSteps = new MedianSteps();
@@ -138,7 +138,7 @@ public class PLM {
                     out_beta[i] += xtwx[j * (y_rows + y_cols - 1) + i] * xtwy[j];
                 }
             }*/
-            out_beta = jniWrapper().wlsAcc(weights, y, out_beta, y_rows, y_cols);
+            new PLM().wlsAcc(weights, y, out_beta, y_rows, y_cols);
 
 	    /* residuals */
 
