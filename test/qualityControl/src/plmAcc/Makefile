@@ -6,7 +6,7 @@ LA_HOME = /home/sniu/lapack-3.5.0
 CC 	= gcc
 NVCC	= nvcc
 CFLAGS	:= -m64 -Wall -fPIC 
-NFLAGS 	:= -arch=sm_20 -Xcompiler -fPIC 
+NFLAGS 	:= -m64 -arch=sm_35 -Xcompiler '-fPIC' 
 LINK	= -shared
 INC	= -I. -I${JAVA_HOME}/include/ -I${JAVA_HOME}/include/linux/ -I$(LA_HOME)/lapacke/include/ -I${CUDA_INSTALL_PATH}/include/ -I/home/sniu/CBLAS/include/
 TARGET	= libjniWrapper.so
@@ -24,6 +24,7 @@ endif
 OBJS    = jniWrapper.o \
 	  cholesky_inv.o \
 	  wls_acc.o \
+	  wls_link.o \
 	  utils.o
 
 all: $(TARGET)
@@ -39,7 +40,8 @@ cholesky_inv.o: cholesky_inv.c cholesky_inv.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(INC)
 
 wls_acc.o: wls_acc.cu wls_acc.h utils.h define_t.h 
-	$(NVCC) $(NFLAGS) --shared -c $< -dlink -o $@ $(INC)
+	$(NVCC) $(NFLAGS) -rdc=true -dc $< -o $@ $(INC)
+	$(NVCC) $(NFLAGS) -dlink $@ -o wls_link.o 
 
 utils.o: utils.cpp utils.h define_t.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(INC)	
