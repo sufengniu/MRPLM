@@ -1,10 +1,12 @@
 import affy.qualityControl.*;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.filecache.DistributedCache;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.DoubleWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.KeyValueTextInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.MultipleInputs;
@@ -14,6 +16,7 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.apache.hadoop.util.GenericOptionsParser;
 
 import java.io.IOException;
+import java.net.URI;
 
 /**
  * Created with IntelliJ IDEA.
@@ -38,9 +41,12 @@ public class qualityControlDriver {
     }
 
     public static void main(String[] args) throws Exception {
-        Configuration conf = new Configuration();
+        JobConf conf = new JobConf();
 
         setInputParameters(conf, args);
+        DistributedCache.createSymlink(conf);
+        DistributedCache.addCacheFile(new URI("hdfs://user/sniu/lib/libjniWrapper.so#libjniWrapper.so"), conf);
+        conf.set("mapred.reduce.child.java.opts", "-Djava.library.path=/home/sniu/hadoop-dist/app/lib/");
 
         int code = doPLMSummarizeOnly(conf);
         System.exit(code);

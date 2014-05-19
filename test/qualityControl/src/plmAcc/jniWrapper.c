@@ -4,7 +4,7 @@
 #include "jniWrapper.h"
 
 // output: out_beta
-JNIEXPORT void JNICALL Java_jniWrapper_wlsAcc
+JNIEXPORT void JNICALL Java_PLM_wlsAcc
 (JNIEnv *env, jobject thisObj, jdoubleArray inJNIWeights, jdoubleArray outJNIY, jdoubleArray outJNIBeta, jint y_rows, jint y_cols) {
 
 	// Convert the incoming JNI jintarray to C's jint[]
@@ -30,7 +30,7 @@ JNIEXPORT void JNICALL Java_jniWrapper_wlsAcc
 }
 
 
-JNIEXPORT jdoubleArray JNICALL Java_jniWrapper_seAcc
+JNIEXPORT jdoubleArray JNICALL Java_PLM_seAcc
 (JNIEnv *env, jobject thisObj, jdoubleArray inJNIArray, jint y_rows, jint y_cols) {
 	// Convert the incoming JNI jintarray to C's jint[]
 	jdouble *inCArray = (*env)->GetDoubleArrayElements(env, inJNIArray, NULL);
