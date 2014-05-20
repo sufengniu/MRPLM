@@ -1,5 +1,13 @@
 to run the hadoop, first ssh to namenode, then, submit the job
 
+also, for palmetto cluster add
+module add cuda-toolkit gcc
+in .bashrc file so that every data node enable cuda library
+
+to make the libjniWrapper.so make sure the JAVA_HOME is set correctly, 
+
+lapacke lib should be installed 
+
 
 
 
