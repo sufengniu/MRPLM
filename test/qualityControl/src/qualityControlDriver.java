@@ -45,8 +45,11 @@ public class qualityControlDriver {
 
         setInputParameters(conf, args);
         DistributedCache.createSymlink(conf);
-        DistributedCache.addCacheFile(new URI("hdfs://user/sniu/lib/libjniWrapper.so#libjniWrapper.so"), conf);
-        conf.set("mapred.reduce.child.java.opts", "-Djava.library.path=/home/sniu/hadoop-dist/app/lib/");
+        //DistributedCache.addCacheFile(new URI("hdfs://user/sniu/lib/libjniWrapper.so#libjniWrapper.so"), conf);
+        //conf.set("mapred.reduce.child.java.opts", "-Djava.library.path=/home/sniu/hadoop-dist/app/lib/");
+
+	GenericOptionsParser goparser = new GenericOptionsParser(conf, args);
+        String otherargs [] = goparser.getRemainingArgs();
 
         int code = doPLMSummarizeOnly(conf);
         System.exit(code);

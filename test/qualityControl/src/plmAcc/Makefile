@@ -1,11 +1,11 @@
-dbg	= 1
+#dbg	= 1
 LA_HOME = /home/sniu/lapack-3.5.0
 #nvcc_loc = $(shell which nvcc)
 #CUDA_INSTALL_PATH := $($(patsubst %/bin/nvcc, %, $(nvcc_loc)))
 
 CC 	= gcc
 NVCC	= nvcc
-CFLAGS	:= -m64 -Wall -fPIC 
+CFLAGS	:= -m64 -fPIC 
 NFLAGS 	:= -m64 -arch=sm_35 -Xcompiler '-fPIC' 
 LINK	= -shared
 INC	= -I. -I${JAVA_HOME}/include/ -I${JAVA_HOME}/include/linux/ -I$(LA_HOME)/lapacke/include/ -I${CUDA_INSTALL_PATH}/include/ -I/home/sniu/CBLAS/include/
@@ -30,10 +30,9 @@ OBJS    = jniWrapper.o \
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(shell source ~/hadoop-dist/bin/setenv.sh)
 	$(CC) $(CFLAGS) $(LINK) $^ -o $@ $(LIBS) 
 
-jniWrapper.o: jniWrapper.c jniWrapper.h define_t.h
+jniWrapper.o: affy_qualityControl_jniWrapper.c affy_qualityControl_jniWrapper.h define_t.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(INC)
 
 cholesky_inv.o: cholesky_inv.c cholesky_inv.h
@@ -46,5 +45,9 @@ wls_acc.o: wls_acc.cu wls_acc.h utils.h define_t.h
 utils.o: utils.cpp utils.h define_t.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(INC)	
 
+cp:
+	cp $(TARGET) ~/hadoop-dist/app/lib/
+	cp $(TARGET) ~/hadoop-dist/hadoop/lib/
 clean:
 	rm -rf *.o *.so
+	rm ~/hadoop-dist/app/lib/$(TARGET) ~/hadoop-dist/hadoop/lib/$(TARGET)
