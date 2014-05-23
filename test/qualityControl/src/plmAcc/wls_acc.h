@@ -8,7 +8,7 @@
 
 #include "define_t.h"
 
-void gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n, double alf, double bet) ;
+void gpu_blas_mmul(cublasHandle_t handle, const double *A, const double *B, double *C, const int m, const int k, const int n, double alf, double bet) ;
 
 void gpu_blas_mtrans(const double *A, double *A_trans, const int m, const int n, double alf, double bet); 
 

@@ -1,8 +1,13 @@
 #include "wls_acc.h"
 #include "utils.h"
 
+#include "define_t.h"
+
 //device memory
 double *d_wts, *d_xtwy, *d_out_beta_gpu, *d_Ainv, *d_B, *d_C, *d_D_temp, *d_AinvB, *d_CAinvB, *d_CAinv, *d_Q, *d_P_block, *d_P_trans_block;
+
+int BLOCK_SIZE;
+int BLOCKS_NUM;
 
 //host memory
 double *h_Ainv, *h_D, *h_D_temp, *h_CAinvB, *h_Q, *h_S;
@@ -104,13 +109,28 @@ __global__ void Kernel_outbeta_P_trans (double *d_P_block, double* d_xtwy, doubl
 
 extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, double* out_beta_gpu)
 {
+
 	struct timeval start, end;
-	long utime;	
+	long utime;
 
 	alloc_host_mem(y_cols,y_rows);
 	alloc_device_mem(y_cols,y_rows);
 
+	BLOCKS_NUM = 4;
+	BLOCK_SIZE = y_cols / BLOCKS_NUM;
+
+	printf("y_rows: %d, y_cols: %d\n", y_rows, y_cols);
 	gpu_XTWY(y_rows, y_cols, wts, y, xtwy);
+	//testing
+	printf("test here \n");
+	
+	// Create a handle for CUBLAS
+	cublasHandle_t handle;
+	cublasStatus_t cublas_status;
+	cublas_status = cublasCreate(&handle);
+	if(cublas_status!=CUBLAS_STATUS_SUCCESS){
+		printf("\n Cublas Status = %s\n", cublasGetErrorString(cublas_status));
+	}
 
 	//Copy wts from Host to device
 	cudaMemcpy(d_wts, wts, y_cols*y_rows*sizeof(double), cudaMemcpyHostToDevice);
@@ -148,7 +168,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 	{
 		dim3 dimGrid(ceil((y_cols)/((float)BLOCK_WIDTH)), 1, 1);
-		dim3 dimBlock(BLOCK_WIDTH, 1, 1);	
+		dim3 dimBlock(BLOCK_WIDTH, 1, 1);
 
 		//Launch Kernel to calculate AinvB
 		Kernel_AinvB <<<dimGrid, dimBlock>>> (d_Ainv, d_B, d_AinvB, y_rows, y_cols);
@@ -157,7 +177,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 	//Calculate in Device CAinvB(y_rows-1,y_rows-1) -> C(y_rows-1, y_cols) * AinvB(y_cols, y_rows-1)	
 	// C(m,n) = A(m,k) * B(k,n)
 	//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n, double alf, double bet) 
-	gpu_blas_mmul(d_C, d_AinvB, d_CAinvB, (int)(y_rows-1), (int)y_cols, (int)(y_rows-1), 1.0, 0.0);
+	gpu_blas_mmul(handle, d_C, d_AinvB, d_CAinvB, (int)(y_rows-1), (int)y_cols, (int)(y_rows-1), 1.0, 0.0);
 
 	//Copy CAinvB from Device to Host
 	cudaMemcpy(h_CAinvB, d_CAinvB, (y_rows-1)*(y_rows-1)*sizeof(double), cudaMemcpyDeviceToHost);
@@ -178,7 +198,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 	//Calculate on Device Q (y_cols, y_rows-1) = AinvB (y_cols, y_rows-1) *[- (D-CAinvB)inv] (y_rows-1, y_rows-1)	
 	// C(m,n) = A(m,k) * B(k,n)
 	//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n, double alf, double bet) 
-	gpu_blas_mmul(d_AinvB, d_CAinvB, d_Q, (int)y_cols, (int)(y_rows-1), (int)(y_rows-1), 1.0, 0.0);
+	gpu_blas_mmul(handle, d_AinvB, d_CAinvB, d_Q, (int)y_cols, (int)(y_rows-1), (int)(y_rows-1), 1.0, 0.0);
 
 	//Copy d_B [-AinvC *(D-BAinvC)inv] from Device to Host
 	cudaMemcpy(h_Q, d_Q, y_cols*(y_rows-1)*sizeof(double), cudaMemcpyDeviceToHost);
@@ -191,7 +211,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 	//Copy xtwy from Host to Device
 	cudaMemcpy(d_xtwy, xtwy, (y_rows+y_cols)*sizeof(double), cudaMemcpyHostToDevice);
-
+	
 	int_t i,j,k;
 
 	double* temp;
@@ -228,17 +248,18 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 	dim3 dimGrid(ceil((BLOCK_SIZE)/((float)BLOCK_WIDTH)), 1, 1);
 	dim3 dimBlock(BLOCK_WIDTH, 1, 1);
 
-#if 0		
+#if 0
 	for(j=0; j<BLOCKS_NUM; j++){
 		for(i=0; i<j; i++){	
 
 			gettimeofday(&start, NULL);
 			// C(m,n) = A(m,k) * B(k,n)
 			//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n) 
-			gpu_blas_mmul(d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);
+
+			gpu_blas_mmul(handle, d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);
 
 			//__global__ void Kernel_outbeta_P (double *d_P_block, double* d_xtwy, double* d_out_beta, int_t size, 
-			//					int_t out_index_row, int_t out_index_col)					
+			//					int_t out_index_row, int_t out_index_col)
 
 			cudaDeviceSynchronize();
 
@@ -280,27 +301,30 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 		// C(m,n) = A(m,k) * B(k,n)
 		//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n)
-		gpu_blas_mmul(d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);	
+		gpu_blas_mmul(handle, d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);	
 
-		Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
-				i*BLOCK_SIZE, j*BLOCK_SIZE);
+Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
+		i*BLOCK_SIZE, j*BLOCK_SIZE);
 	}
 
 #else
 	for(j=0; j<BLOCKS_NUM; j++){
 		for(i=0; i<BLOCKS_NUM; i++){ 
 
+
+
 			// C(m,n) = A(m,k) * B(k,n)
 			//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n) 
-			gpu_blas_mmul(d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);
+			gpu_blas_mmul(handle, d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);
 
 			//gpu_blas_mtrans(d_P_block, d_P_trans_block, (int)BLOCK_SIZE, (int)BLOCK_SIZE, 1.0, 0.0);
 
 			//Launch Kernel to calculate out_beta for P
 			//__global__ void Kernel_outbeta_P (double *d_P_block, double* d_xtwy, double* d_out_beta, int_t size, 
-			//											int_t out_index_row, int_t out_index_col)					
+			//					int_t out_index_row, int_t out_index_col)
+
 			Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
-					i*BLOCK_SIZE, j*BLOCK_SIZE);			
+					i*BLOCK_SIZE, j*BLOCK_SIZE);
 			//Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_trans_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
 			//					j*BLOCK_SIZE, i*BLOCK_SIZE);			
 		}
@@ -308,20 +332,22 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 	//diag blocks
 	/*
-	   for(j=0,i=0; j<BLOCKS_NUM; j++,i++){
+	for(j=0,i=0; j<BLOCKS_NUM; j++,i++){
+	  
+		// C(m,n) = A(m,k) * B(k,n)
+		//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n)
+		gpu_blas_mmul(d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);	
 
-// C(m,n) = A(m,k) * B(k,n)
-/gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n)
-gpu_blas_mmul(d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);	
-
-Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
-i*BLOCK_SIZE, j*BLOCK_SIZE);
-}
-	 */
+		Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
+		i*BLOCK_SIZE, j*BLOCK_SIZE);
+	}*/
 #endif
 
 	//Copy d_out_beta_gpu from Device to Host
 	cudaMemcpy(out_beta_gpu, d_out_beta_gpu, (y_rows+y_cols)*sizeof(double), cudaMemcpyDeviceToHost);
+
+
+
 
 	for(j=0; j<y_cols; j++){
 		out_beta_gpu[j] += h_Ainv[j]*xtwy[j];
@@ -342,12 +368,15 @@ i*BLOCK_SIZE, j*BLOCK_SIZE);
 
 	//done
 
+	// Destroy the handle
+	cublasDestroy(handle);
+	
 	//free GPU memory
 	cudaFree(*d_X_dptr);
 
 	//Free Host Memory
-	free(*X_dptr);		
-	free(X_dptr);	
+	free(*X_dptr);	
+	free(X_dptr);
 	free(d_X_dptr);
 	free(d_Y_dptr);
 
@@ -357,7 +386,7 @@ i*BLOCK_SIZE, j*BLOCK_SIZE);
 
 // Multiply the arrays A and B on GPU and save the result in C
 // C(m,n) = A(m,k) * B(k,n)
-void gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n,
+void gpu_blas_mmul(cublasHandle_t handle, const double *A, const double *B, double *C, const int m, const int k, const int n,
 		double alf, double bet) {
 
 	//const double alf = 1;
@@ -368,21 +397,21 @@ void gpu_blas_mmul(const double *A, const double *B, double *C, const int m, con
 	const double *beta = &bet;
 
 	// Create a handle for CUBLAS
-	cublasHandle_t handle;
+	//testing: cublasHandle_t handle;
 	cublasStatus_t cublas_status;
 
-	cublas_status = cublasCreate(&handle);
-	if(cublas_status!=CUBLAS_STATUS_SUCCESS)
-		printf("\nCublas Status = %s\n", cublasGetErrorString(cublas_status));
+	//cublas_status = cublasCreate(&handle);
+	//if(cublas_status!=CUBLAS_STATUS_SUCCESS)
+	//	printf("\n cublas create Cublas Status = %s\n", cublasGetErrorString(cublas_status));
 
 	// Do the actual multiplication
 	cublas_status = cublasDgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, m, n, k, alpha, A, lda, B, ldb, beta, C, ldc);
 
 	if(cublas_status!=CUBLAS_STATUS_SUCCESS)
-		printf("\nCublas Status = %s\n", cublasGetErrorString(cublas_status));
+		printf("\n In cublasdgemmm, Cublas Status = %s\n", cublasGetErrorString(cublas_status));
 
 	// Destroy the handle
-	cublasDestroy(handle);
+	//cublasDestroy(handle);
 }
 
 
