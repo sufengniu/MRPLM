@@ -39,6 +39,7 @@ JNIEXPORT void JNICALL Java_affy_qualityControl_jniWrapper_wlsAcc
 	/* application code here */
 	wls_gpu(y_cols, y_rows, wts, y, out_beta);
 
+	printf("GPU job done\n");
 	(*env)->ReleaseDoubleArrayElements(env, inJNIWeights, wts, 0); // release resources
 
 	(*env)->SetDoubleArrayRegion(env, outJNIY, 0, y_rows*y_cols, y);

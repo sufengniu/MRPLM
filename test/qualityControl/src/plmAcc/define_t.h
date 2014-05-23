@@ -2,9 +2,12 @@
 #ifndef DEFINE_T_H_
 #define DEFINE_T_H_
 
-#define TOTAL_SIZE 	70000
-#define BLOCKS_NUM	4	//should be divisble by TOTAL_SIZE
-#define BLOCK_SIZE	(TOTAL_SIZE/BLOCKS_NUM)
+//#define TOTAL_SIZE 	70000
+//#define BLOCKS_NUM	4	//should be divisble by TOTAL_SIZE
+//#define BLOCK_SIZE	(TOTAL_SIZE/BLOCKS_NUM)
+
+//extern int BLOCK_SIZE;
+//extern int BLOCKS_NUM;
 
 #define Y_ROWS		12
 #define Y_COLS		TOTAL_SIZE
@@ -19,7 +22,7 @@
 
 typedef long int int_t;
 
-#define CPU_COMPUTE
+//#define CPU_COMPUTE
 
 #endif
 /*end*/
