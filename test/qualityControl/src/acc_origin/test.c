@@ -1,6 +1,15 @@
-#include "test.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+#include "define_t.h"
 
-void gpu_handle(int_t y_cols, int_t y_rows, double* wts, double* y, double* out_beta_gpu);
+void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, double* out_beta_gpu);
+
+void XTWX(long int y_rows, long int y_cols, double *wts, double *xtwx);
+void XTWXinv(long int y_rows, long int y_cols,double *xtwx);
+void XTWY(long int y_rows, long int y_cols, double *wts,double *y, double *xtwy);
+int Choleski_inverse(double *X, double *Xinv, double *work, int n, int upperonly);
 
 int main(){
 
@@ -71,7 +80,7 @@ int main(){
 	//GPU start
 	gettimeofday(&start, NULL);
 
-	gpu_handle(y_cols, y_rows, wts, y, out_beta_gpu);
+	wls_gpu(y_cols, y_rows, wts, y, out_beta_gpu);
 
 	gettimeofday(&end, NULL);
 	utime = ((end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec);

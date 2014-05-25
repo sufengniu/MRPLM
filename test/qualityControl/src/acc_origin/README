@@ -1,0 +1,8 @@
+MAKE SURE the lapacke and lapack lib are recompiled with option -fPIC in make.inc
+
+go to make.inc file
+
+	OPTS = -O2 -frecursive -fPIC
+
+and:
+	CFLAGS = -O3 -fPIC

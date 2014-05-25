@@ -1,31 +1,30 @@
 #include "utils.h"
 
-void gpu_XTWY(int_t y_rows, int_t y_cols, double *wts,double *y, double *xtwy){
+void gpu_XTWY(int_t y_rows, int_t y_cols, double *wts,double *y, double *xtwy)
+{
 
-  int_t i,j;
-    
-  /* sweep columns (ie chip effects) */
+	int_t i,j;
 
-  for (j=0; j < y_cols; j++){
-    xtwy[j] = 0.0;
-    for (i=0; i < y_rows; i++){
-      xtwy[j] += wts[j*y_rows + i]* y[j*y_rows + i];
-    }
-  }
-	
-  /* sweep rows  (ie probe effects) */
- 
-  for (i=0; i < y_rows; i++){
-    xtwy[i+y_cols] = 0.0;
-    for (j=0; j < y_cols; j++){
-      xtwy[i+y_cols] += wts[j*y_rows + i]* y[j*y_rows + i]; 
-    }
-  }
+	/* sweep columns (ie chip effects) */
+	for (j=0; j < y_cols; j++){
+		xtwy[j] = 0.0;
+		for (i=0; i < y_rows; i++){
+			xtwy[j] += wts[j*y_rows + i] * y[j*y_rows + i];	
+		}
+	}
 
-  for (i=0; i < y_rows-1; i++){
-    xtwy[i+y_cols] = xtwy[i+y_cols] - xtwy[y_cols+y_rows-1];
-  }
-  
+	/* sweep rows  (ie probe effects) */
+	for (i=0; i < y_rows; i++){
+		xtwy[i+y_cols] = 0.0;
+		for (j=0; j < y_cols; j++){
+			xtwy[i+y_cols] += wts[j*y_rows + i]* y[j*y_rows + i]; 
+		}
+	}
+
+	for (i=0; i < y_rows-1; i++){
+		xtwy[i+y_cols] = xtwy[i+y_cols] - xtwy[y_cols+y_rows-1];
+	}
+
 }
 
 //Calculate transpose of matrix
@@ -60,9 +59,9 @@ void mat_inverse(double* mat, double* mat_inv, int_t y_rows)
 {
 	double* work = (double*)calloc(y_rows*y_rows,sizeof(double));
 	int err = Choleski_inverse(mat, mat_inv, work, (int)y_rows, 0);
-	
+
 	if(err) printf("\nCholeski error code = %d\n", err);
-	
+
 	free(work);
 }
 
@@ -79,10 +78,10 @@ void mat_mult(const double *A, const double *B, double *C, const int_t m, const 
 		}
 	}
 }
-	
+
 //Calcuate on Host -> D from D_temp
 void host_D_from_Dtemp(double* h_D, double* h_D_temp, int_t y_rows, int_t y_cols){
-	
+
 	int_t i,j;
 
 	double val_temp = 0.0; //h_D_temp[i][row-1]

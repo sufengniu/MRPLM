@@ -1,25 +1,51 @@
-INCLUDES=-I/home/sniu/lapack-3.5.0/lapacke/include -I/usr/local/cuda-5.5/include
+dbg	= 1
 
-LIB=-L/home/sniu/lapack-3.5.0/
-LIB+=/usr/lib/libgfortran.so
-LIB+=/usr/local/cuda-5.5/lib64/libcudart.so.5.5.22 /usr/local/cuda-5.5/lib64/libcublas.so.5.5.22
+LA_HOME = /home/sniu/lapack-3.5.0
+#nvcc_loc = $(shell which nvcc)
+#CUDA_INSTALL_PATH := $($(patsubst %/bin/nvcc, %, $(nvcc_loc)))
 
-CC = gcc
+CC 	= gcc
+NVCC	= nvcc
 
-test: test.o matrix_functions.o test_cuda.o utils.o
-	$(CC) -o test test.o matrix_functions.o test_cuda.o utils.o -lm -llapacke -llapack -lblas -lgfortran $(LIB)
+CFLAGS	:= -m64 
+NFLAGS 	:= -m64 -arch=sm_35
 
-test.o: test.c test.h define_t.h
-	$(CC) -O3 -c test.c -o test.o
+INC	= -I. -I${JAVA_HOME}/include/ -I${JAVA_HOME}/include/linux/ -I$(LA_HOME)/lapacke/include/ -I${CUDA_INSTALL_PATH}/include/ -I/home/sniu/CBLAS/include/
 
-matrix_functions.o: matrix_functions.c matrix_functions.h
-	$(CC) $(INCLUDES) -O3 -c matrix_functions.c -o matrix_functions.o
+LIBS    := -L$(LA_HOME) -L/home/sniu/CBLAS/lib -L${CUDA_INSTALL_PATH}/lib64
+LIBS	+= -lm -llapacke -llapack -lblas -lgfortran -lrt
+LIBS	+= -lcudart -lcublas
 
-test_cuda.o: test_cuda.cu test_cuda.h define_t.h
-	nvcc  $(INCLUDES) -c test_cuda.cu -o test_cuda.o
+ifeq ($(dbg),1)
+	CFLAGS += -g
+	NFLAGS += -g -G
+else
+	CFLAGS += -O3
+	NFLAGS +=
+endif
+
+OBJS    = test.o \
+	  cholesky_inv.o \
+	  wls_acc.o \
+	  utils.o
+
+all: test
+
+test: $(OBJS)
+	$(CC) $(CFLAGS) $^ -o $@ $(LIBS) 
+
+test.o: test.c define_t.h
+	$(CC) $(CFLAGS) -c $< -o $@ $(INC)
+
+cholesky_inv.o: cholesky_inv.c cholesky_inv.h
+	$(CC) $(CFLAGS) -c $< -o $@ $(INC)
+
+wls_acc.o: wls_acc.cu wls_acc.h utils.h define_t.h 
+	$(NVCC) $(NFLAGS) -c $< -o $@ $(INC)	
 
 utils.o: utils.cpp utils.h define_t.h
-	$(CC) -O3 -c utils.cpp -o utils.o
+	$(CC) $(CFLAGS) -c $< -o $@ $(INC)	
 
-clean: 
-	rm -f *.o test
+clean:
+	rm -rf *.o *.so *~ test
+	
