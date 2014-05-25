@@ -85,7 +85,7 @@ __global__ void Kernel_outbeta_P (double *d_P_block, double* d_xtwy, double* d_o
 		d_out_beta_elem = d_out_beta[out_index_row+row];
 		for(i=0;i<size; i++){
 			d_out_beta_elem -= d_P_block[i*size+row]*d_xtwy[out_index_col+i];
-		}	
+		}
 		d_out_beta[out_index_row+row] = d_out_beta_elem;
 	}
 }
@@ -113,16 +113,13 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 	struct timeval start, end;
 	long utime;
 
-	alloc_host_mem(y_cols,y_rows);
-	alloc_device_mem(y_cols,y_rows);
-
 	BLOCKS_NUM = 4;
 	BLOCK_SIZE = y_cols / BLOCKS_NUM;
 
-	printf("y_rows: %d, y_cols: %d\n", y_rows, y_cols);
+	alloc_host_mem(y_cols, y_rows);
+	alloc_device_mem(y_cols, y_rows);
+
 	gpu_XTWY(y_rows, y_cols, wts, y, xtwy);
-	//testing
-	printf("test here \n");
 	
 	// Create a handle for CUBLAS
 	cublasHandle_t handle;
@@ -228,7 +225,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 	}
 
 	double **d_X_dptr;
-	double **d_Y_dptr;		
+	double **d_Y_dptr;
 
 	d_X_dptr = (double**)calloc(BLOCKS_NUM, sizeof(double*));
 	d_Y_dptr = (double**)calloc(BLOCKS_NUM, sizeof(double*));
@@ -301,10 +298,9 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 		// C(m,n) = A(m,k) * B(k,n)
 		//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n)
-		gpu_blas_mmul(handle, d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);	
+		gpu_blas_mmul(handle, d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);
 
-Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
-		i*BLOCK_SIZE, j*BLOCK_SIZE);
+		Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE, i*BLOCK_SIZE, j*BLOCK_SIZE);
 	}
 
 #else
@@ -333,7 +329,7 @@ Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (in
 	//diag blocks
 	/*
 	for(j=0,i=0; j<BLOCKS_NUM; j++,i++){
-	  
+
 		// C(m,n) = A(m,k) * B(k,n)
 		//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n)
 		gpu_blas_mmul(d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);	
@@ -345,9 +341,6 @@ Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (in
 
 	//Copy d_out_beta_gpu from Device to Host
 	cudaMemcpy(out_beta_gpu, d_out_beta_gpu, (y_rows+y_cols)*sizeof(double), cudaMemcpyDeviceToHost);
-
-
-
 
 	for(j=0; j<y_cols; j++){
 		out_beta_gpu[j] += h_Ainv[j]*xtwy[j];
@@ -446,6 +439,8 @@ void gpu_blas_mtrans(const double *A, double *A_trans, const int m, const int n,
 
 void alloc_host_mem(int_t y_cols, int_t y_rows)
 {
+	cudaError_t error; 
+
 	//Allocate host memory for matrices
 #if 0	
 	h_Ainv = 	(double*)malloc(y_cols*sizeof(double));
@@ -453,37 +448,95 @@ void alloc_host_mem(int_t y_cols, int_t y_rows)
 	h_D_temp = 	(double*)malloc(CUSTOM_VAL*y_rows*sizeof(double));
 	h_CAinvB = 	(double*)malloc((y_rows-1)*(y_rows-1)*sizeof(double));
 	h_Q = 		(double*)malloc(y_cols*(y_rows-1)*sizeof(double));
-	h_S = 		(double*)malloc((y_rows-1)*(y_rows-1)*sizeof(double));	
-	xtwy = 		(double*)malloc((y_rows+y_cols)*sizeof(double));	
+	h_S = 		(double*)malloc((y_rows-1)*(y_rows-1)*sizeof(double));
+	xtwy = 		(double*)malloc((y_rows+y_cols)*sizeof(double));
 #else
-	cudaHostAlloc((void**)&h_Ainv, 		(y_cols*sizeof(double)), 				cudaHostAllocDefault);
-	cudaHostAlloc((void**)&h_D, 		((y_rows-1)*(y_rows-1)*sizeof(double)), cudaHostAllocDefault);
-	cudaHostAlloc((void**)&h_D_temp, 	(CUSTOM_VAL*y_rows*sizeof(double)), 	cudaHostAllocDefault);
-	cudaHostAlloc((void**)&h_CAinvB, 	((y_rows-1)*(y_rows-1)*sizeof(double)), cudaHostAllocDefault);
-	cudaHostAlloc((void**)&h_Q, 		(y_cols*(y_rows-1)*sizeof(double)), 	cudaHostAllocDefault);
-	cudaHostAlloc((void**)&h_S, 		((y_rows-1)*(y_rows-1)*sizeof(double)), cudaHostAllocDefault);
-	cudaHostAlloc((void**)&xtwy, 		((y_rows+y_cols)*sizeof(double)), 		cudaHostAllocDefault);
+	error = cudaHostAlloc((void**)&h_Ainv,	(y_cols*sizeof(double)), 		cudaHostAllocDefault);
+	if (error != cudaSuccess){
+		printf("\nh_Ainv allocate error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+
+	error = cudaHostAlloc((void**)&h_D,	((y_rows-1)*(y_rows-1)*sizeof(double)), cudaHostAllocDefault);
+	if (error != cudaSuccess){
+		printf("\nh_D allocate error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaHostAlloc((void**)&h_D_temp,(CUSTOM_VAL*y_rows*sizeof(double)), 	cudaHostAllocDefault);
+	if (error != cudaSuccess){
+		printf("\nh_D_temp allocate error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaHostAlloc((void**)&h_CAinvB,((y_rows-1)*(y_rows-1)*sizeof(double)), cudaHostAllocDefault);
+	if (error != cudaSuccess){
+		printf("\nh_CAinvB allocate error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaHostAlloc((void**)&h_Q, 	(y_cols*(y_rows-1)*sizeof(double)), 	cudaHostAllocDefault);
+	if (error != cudaSuccess){
+		printf("\nh_Q allocate error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaHostAlloc((void**)&h_S, 	((y_rows-1)*(y_rows-1)*sizeof(double)), cudaHostAllocDefault);
+	if (error != cudaSuccess){
+		printf("\nh_S allocate error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaHostAlloc((void**)&xtwy,	((y_rows+y_cols)*sizeof(double)), 	cudaHostAllocDefault);
+	if (error != cudaSuccess){
+		printf("\nxtwy allocate error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		exit(EXIT_FAILURE);
+	}
 #endif
 }
 
 void free_host_mem(void)
-{		
+{
+	cudaError_t error;
 #if 0
 	free(h_Ainv);
-	free(h_D);	
+	free(h_D);
 	free(h_D_temp);
 	free(h_CAinvB);
 	free(h_Q);
 	free(h_S);
 	free(xtwy);
 #else
-	cudaFreeHost(h_Ainv);
-	cudaFreeHost(h_D);	
-	cudaFreeHost(h_D_temp);
-	cudaFreeHost(h_CAinvB);
-	cudaFreeHost(h_Q);
-	cudaFreeHost(h_S);
-	cudaFreeHost(xtwy);
+	error = cudaFreeHost(h_Ainv);
+	if (error != cudaSuccess){
+		printf("\nh_Ainv free host error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaFreeHost(h_D);
+	if (error != cudaSuccess){
+		printf("\nh_Dfree host error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaFreeHost(h_D_temp);
+	if (error != cudaSuccess){
+		printf("\nh_D_temp free host error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaFreeHost(h_CAinvB);
+	if (error != cudaSuccess){
+		printf("\nh_CAinvB free host error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaFreeHost(h_Q);
+	if (error != cudaSuccess){
+		printf("\nh_Q free host error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaFreeHost(h_S);
+	if (error != cudaSuccess){
+		printf("\nh_S free host error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		//exit(EXIT_FAILURE);
+	}
+	error = cudaFreeHost(xtwy);
+	if (error != cudaSuccess){
+		printf("\nxtwy free host error code %s, line(%d)\n", cudaGetErrorString(error), __LINE__);
+		exit(EXIT_FAILURE);
+	}
 #endif
 }
 
@@ -521,6 +574,16 @@ void free_device_mem(void)
 	cudaFree(d_xtwy);
 	cudaFree(d_P_block);
 	//cudaFree(d_P_trans_block);
+}
+
+const char* cublasGetErrorString(cudaError_t status)
+{
+	switch(status)
+	{
+
+
+
+	}
 }
 
 const char* cublasGetErrorString(cublasStatus_t status)

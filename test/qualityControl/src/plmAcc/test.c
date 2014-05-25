@@ -1,4 +1,8 @@
-#include "jniWrapper.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
+#include "define_t.h"
 
 void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, double* out_beta_gpu);
 
@@ -14,6 +18,8 @@ int main(){
 
 	double *wts = (double *)calloc((y_rows*y_cols),sizeof(double));
 	double *y = (double *)calloc((y_rows*y_cols),sizeof(double));
+
+	printf("testing here\n");
 
 #ifdef CPU_COMPUTE
 	double *xtwx = (double *)calloc((y_rows+y_cols-1)*(y_rows+y_cols-1),sizeof(double));

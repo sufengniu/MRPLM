@@ -1,13 +1,16 @@
-#dbg	= 1
+dbg	= 1
+
 LA_HOME = /home/sniu/lapack-3.5.0
 #nvcc_loc = $(shell which nvcc)
 #CUDA_INSTALL_PATH := $($(patsubst %/bin/nvcc, %, $(nvcc_loc)))
 
 CC 	= gcc
 NVCC	= nvcc
+
 CFLAGS	:= -m64 -fPIC 
 NFLAGS 	:= -m64 -arch=sm_35 -Xcompiler '-fPIC' 
 LINK	= -shared
+
 INC	= -I. -I${JAVA_HOME}/include/ -I${JAVA_HOME}/include/linux/ -I$(LA_HOME)/lapacke/include/ -I${CUDA_INSTALL_PATH}/include/ -I/home/sniu/CBLAS/include/
 TARGET	= libjniWrapper.so
 
@@ -17,8 +20,10 @@ LIBS	+= -lcudart -lcublas
 
 ifeq ($(dbg),1)
 	CFLAGS += -g
+	NFLAGS += -g -G
 else
 	CFLAGS += -O3
+	NFLAGS +=
 endif
 
 OBJS    = jniWrapper.o \
@@ -49,5 +54,5 @@ cp:
 	cp $(TARGET) ~/hadoop-dist/app/lib/
 	cp $(TARGET) ~/hadoop-dist/hadoop/lib/
 clean:
-	rm -rf *.o *.so
+	rm -rf *.o *.so *~ test
 	rm ~/hadoop-dist/app/lib/$(TARGET) ~/hadoop-dist/hadoop/lib/$(TARGET)

@@ -1,6 +1,4 @@
-before compile this code, make sure you install blas, lapack and lapacke library
-
-also, MAKE SURE the lapacke and lapack lib are recompiled with option -fPIC in make.inc
+MAKE SURE the lapacke and lapack lib are recompiled with option -fPIC in make.inc
 
 go to make.inc file
 

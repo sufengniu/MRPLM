@@ -20,7 +20,7 @@ __global__ void Kernel_Ainv_B(double *d_wts, double* d_Ainv, double *d_B, int_t 
 	int_t i;
 	double wts_yrow_1, d_wts_elem, d_Ainv_col;
 
-	if(col < y_cols){		
+	if(col < y_cols){
 		wts_yrow_1 = d_wts[col*y_rows+y_rows-1];	
 		d_Ainv_col = wts_yrow_1;
 
@@ -112,12 +112,12 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 	struct timeval start, end;
 	long utime;
+	
+        int BLOCKS_NUM = 4;
+        BLOCK_SIZE = y_cols / BLOCKS_NUM;
 
 	alloc_host_mem(y_cols,y_rows);
 	alloc_device_mem(y_cols,y_rows);
-
-	BLOCKS_NUM = 4;
-	BLOCK_SIZE = y_cols / BLOCKS_NUM;
 	
 	gpu_XTWY(y_rows, y_cols, wts, y, xtwy);
 		
@@ -342,9 +342,6 @@ Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (in
 
 	//Copy d_out_beta_gpu from Device to Host
 	cudaMemcpy(out_beta_gpu, d_out_beta_gpu, (y_rows+y_cols)*sizeof(double), cudaMemcpyDeviceToHost);
-
-
-
 
 	for(j=0; j<y_cols; j++){
 		out_beta_gpu[j] += h_Ainv[j]*xtwy[j];

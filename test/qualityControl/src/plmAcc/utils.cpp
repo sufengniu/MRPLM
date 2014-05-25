@@ -5,21 +5,15 @@ void gpu_XTWY(int_t y_rows, int_t y_cols, double *wts,double *y, double *xtwy)
 
 	int_t i,j;
 
-//testing
-printf("testing1 here\n");
-
 	/* sweep columns (ie chip effects) */
 	for (j=0; j < y_cols; j++){
+
 		xtwy[j] = 0.0;
+
 		for (i=0; i < y_rows; i++){
 			xtwy[j] += wts[j*y_rows + i] * y[j*y_rows + i];
-
-			printf("%d, %d: wts->%f, y->%f, xtwy->%f\n", j, i, wts[j*y_rows + i], y[j*y_rows + i], xtwy[j]);
 		}
 	}
-
-//testing
-printf("testing2 here\n");
 
 	/* sweep rows  (ie probe effects) */
 	for (i=0; i < y_rows; i++){
@@ -29,15 +23,9 @@ printf("testing2 here\n");
 		}
 	}
 
-//testing
-printf("testing3 here\n");
-
 	for (i=0; i < y_rows-1; i++){
 		xtwy[i+y_cols] = xtwy[i+y_cols] - xtwy[y_cols+y_rows-1];
 	}
-
-//testing
-printf("testing4 here\n");
 }
 
 //Calculate transpose of matrix

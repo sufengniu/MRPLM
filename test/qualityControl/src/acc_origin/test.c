@@ -80,7 +80,7 @@ int main(){
 	//GPU start
 	gettimeofday(&start, NULL);
 
-	for (i = 0; i < 10; i++){
+	for (i=0; i<10; i++){
 		wls_gpu(y_cols, y_rows, wts, y, out_beta_gpu);
 	}
 

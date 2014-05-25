@@ -6,9 +6,6 @@
 //#define BLOCKS_NUM	4	//should be divisble by TOTAL_SIZE
 //#define BLOCK_SIZE	(TOTAL_SIZE/BLOCKS_NUM)
 
-//extern int BLOCK_SIZE;
-//extern int BLOCKS_NUM;
-
 #define Y_ROWS		12
 #define Y_COLS		70000	
 

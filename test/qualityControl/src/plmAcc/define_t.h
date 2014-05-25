@@ -2,15 +2,12 @@
 #ifndef DEFINE_T_H_
 #define DEFINE_T_H_
 
-//#define TOTAL_SIZE 	70000
+//#define TOTAL_SIZE 	100
 //#define BLOCKS_NUM	4	//should be divisble by TOTAL_SIZE
-//#define BLOCK_SIZE	(TOTAL_SIZE/BLOCKS_NUM)
-
-//extern int BLOCK_SIZE;
-//extern int BLOCKS_NUM;
+//#define BLOCK_SIZE	(total_size/BLOCKS_NUM)
 
 #define Y_ROWS		12
-#define Y_COLS		TOTAL_SIZE
+#define Y_COLS		70000	
 
 #define RANDOM_MAX	10
 #define RANDOM_MIN	5
@@ -25,4 +22,4 @@ typedef long int int_t;
 //#define CPU_COMPUTE
 
 #endif
-/*end*/
+
