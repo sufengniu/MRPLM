@@ -80,7 +80,9 @@ int main(){
 	//GPU start
 	gettimeofday(&start, NULL);
 
-	wls_gpu(y_cols, y_rows, wts, y, out_beta_gpu);
+	for (i = 0; i < 10; i++){
+		wls_gpu(y_cols, y_rows, wts, y, out_beta_gpu);
+	}
 
 	gettimeofday(&end, NULL);
 	utime = ((end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec);
