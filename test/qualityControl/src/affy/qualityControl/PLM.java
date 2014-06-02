@@ -262,7 +262,7 @@ public class PLM {
         int Msize = y_cols + y_rows - 1;
 
 	/* diagonal elements of first part of matrix ie upper partition*/
-        for (int j = 0; j < y_cols; j++) {
+/*        for (int j = 0; j < y_cols; j++) {
             for (int i = 0; i < y_rows-1; i++) {
                 xtwx[j * Msize + j] += wts[j * y_rows + i];
                 xtwx[(y_cols + i) * Msize + (y_cols + i)] += wts[j * y_rows + i];
@@ -272,7 +272,7 @@ public class PLM {
                 xtwx[j * Msize + (y_cols + i)] = xtwx[(y_cols + i) * Msize + j] = wts[j * y_rows + i] - wts[j * y_rows + (y_rows - 1)];
             }
             xtwx[j * Msize + j] += wts[j * y_rows + y_rows-1];
-        }
+        }*/
         double sum = 0;
         for (int j = 0; j < y_cols; j++) {
             for (int i = 0; i < y_rows - 1; i++) {
