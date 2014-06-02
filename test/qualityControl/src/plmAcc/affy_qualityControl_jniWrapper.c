@@ -11,11 +11,11 @@ JNIEXPORT void JNICALL Java_affy_qualityControl_jniWrapper_wlsAcc
 	jdouble *wts = (*env)->GetDoubleArrayElements(env, inJNIWeights, NULL);	
 	jsize length = (*env)->GetArrayLength(env, inJNIWeights);
 
-//	jdouble *y = (*env)->GetDoubleArrayElements(env, outJNIY, NULL);
-//	jdouble *out_beta = (*env)->GetDoubleArrayElements(env, outJNIBeta, NULL);
+	jdouble *y = (*env)->GetDoubleArrayElements(env, outJNIY, NULL);
+	jdouble *out_beta = (*env)->GetDoubleArrayElements(env, outJNIBeta, NULL);
 	
-	jdouble *y = (jdouble *)malloc(y_rows*y_cols*sizeof(jdouble));
-	jdouble *out_beta = (jdouble *)malloc((y_rows+y_cols)*sizeof(jdouble));
+//	jdouble *y = (jdouble *)malloc(y_rows*y_cols*sizeof(jdouble));
+//	jdouble *out_beta = (jdouble *)malloc((y_rows+y_cols)*sizeof(jdouble));
 
 /*	jclass _class = (*env)->GetObjectClass(env, _obj);
 
@@ -33,20 +33,23 @@ JNIEXPORT void JNICALL Java_affy_qualityControl_jniWrapper_wlsAcc
 	jdoubleArray fieldbeta = (jdoubleArray)(*env)->GetObjectField(env, _obj, fidbeta);
 	jdouble *beta = (*env)->GetDoubleArrayElements(env, fieldbeta, NULL);
 */
+
+//	printf("starting CPU job...\n"); fflush(stdout);
+//	wls_cpu(y_cols, y_rows, wts, y, out_beta);
 	
-	printf("starting GPU job...\n");
+	printf("starting GPU job...\n"); fflush(stdout);
 
 	/* application code here */
 	wls_gpu(y_cols, y_rows, wts, y, out_beta);
 	
-	printf("GPU job done\n");
+	printf("GPU job done\n"); fflush(stdout);
 	(*env)->ReleaseDoubleArrayElements(env, inJNIWeights, wts, 0); // release resources
 
 	(*env)->SetDoubleArrayRegion(env, outJNIY, 0, y_rows*y_cols, y);
 	(*env)->SetDoubleArrayRegion(env, outJNIBeta, 0, y_rows+y_cols, out_beta);  // copy
 	
-	free(y);
-	free(out_beta);
+//	free(y);
+//	free(out_beta);
 }
 
 
