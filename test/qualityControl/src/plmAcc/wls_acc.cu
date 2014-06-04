@@ -20,8 +20,8 @@ __global__ void Kernel_Ainv_B(double *d_wts, double* d_Ainv, double *d_B, int_t 
 	int_t i;
 	double wts_yrow_1, d_wts_elem, d_Ainv_col;
 
-	if(col < y_cols){		
-		wts_yrow_1 = d_wts[col*y_rows+y_rows-1];	
+	if(col < y_cols){
+		wts_yrow_1 = d_wts[col*y_rows+y_rows-1];
 		d_Ainv_col = wts_yrow_1;
 
 		for (i=0; i<(y_rows-1); i++){
@@ -48,10 +48,10 @@ __global__ void Kernel_Dtemp(double *d_wts, double *d_D_temp, int_t y_rows, int_
 	for(i=0 ;i<x_range; i++){
 		if( ((col*x_range+i)<y_cols) && (row<y_rows) )
 			d_D_temp_val+= d_wts[(col*x_range+i)*y_rows+row];
-	}	
+	}
 	if(row < y_rows){
 		d_D_temp[col*y_rows+row] = d_D_temp_val;
-	}		
+	}
 }
 
 __global__ void Kernel_AinvB (double *d_Ainv, double* d_B, double* d_AinvB, int_t y_rows, int_t y_cols)
@@ -80,7 +80,6 @@ __global__ void Kernel_outbeta_P (double *d_P_block, double* d_xtwy, double* d_o
 	int_t i;
 
 	double d_out_beta_elem;
-
 	if(row<size){
 		d_out_beta_elem = d_out_beta[out_index_row+row];
 		for(i=0;i<size; i++){
@@ -102,7 +101,7 @@ __global__ void Kernel_outbeta_P_trans (double *d_P_block, double* d_xtwy, doubl
 		d_out_beta_elem = d_out_beta[out_index_col+col];
 		for(i=0;i<size; i++){
 			d_out_beta_elem -= d_P_block[col*size+i]*d_xtwy[out_index_row+i];
-		}		
+		}
 		d_out_beta[out_index_col+col] = d_out_beta_elem;
 	}
 }
@@ -112,6 +111,8 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 	struct timeval start, end;
 	long utime;
+
+	int_t i,j,k;
 
 	BLOCKS_NUM = 4;
 	BLOCK_SIZE = y_cols / BLOCKS_NUM;
@@ -203,16 +204,18 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 	//Calculate on Host -> CAinv = trans(AinvB) 
 	gpu_blas_mtrans(d_AinvB, d_CAinv, y_cols, y_rows-1, 1.0, 0.0);
 
+	for (i=0; i<(y_rows+y_cols-1); i++){
+		out_beta_gpu[i] = 0.0;
+	}
+	
 	//Copy out_beta_gpu from Host to Device
 	cudaMemcpy(d_out_beta_gpu, out_beta_gpu, (y_rows+y_cols)*sizeof(double), cudaMemcpyHostToDevice);
 
 	//Copy xtwy from Host to Device
 	cudaMemcpy(d_xtwy, xtwy, (y_rows+y_cols)*sizeof(double), cudaMemcpyHostToDevice);
-	
-	int_t i,j,k;
 
 	double* temp;
-	temp = (double*)calloc(y_cols*(y_rows-1), sizeof(double));	
+	temp = (double*)calloc(y_cols*(y_rows-1), sizeof(double));
 	double** X_dptr = (double**)calloc(BLOCKS_NUM, sizeof(double*));
 	for(i=0;i<BLOCKS_NUM;i++){
 		X_dptr[i] = temp+i*(BLOCK_SIZE*(y_rows-1));
@@ -230,7 +233,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 	d_X_dptr = (double**)calloc(BLOCKS_NUM, sizeof(double*));
 	d_Y_dptr = (double**)calloc(BLOCKS_NUM, sizeof(double*));
 
-	cudaMalloc((void**)&temp, y_cols*(y_rows-1)*sizeof(double));	
+	cudaMalloc((void**)&temp, y_cols*(y_rows-1)*sizeof(double));
 	for(i=0;i<BLOCKS_NUM;i++){
 		d_X_dptr[i] = temp+i*(BLOCK_SIZE*(y_rows-1));
 	}
@@ -247,7 +250,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 #if 0
 	for(j=0; j<BLOCKS_NUM; j++){
-		for(i=0; i<j; i++){	
+		for(i=0; i<j; i++){
 
 			gettimeofday(&start, NULL);
 			// C(m,n) = A(m,k) * B(k,n)
@@ -305,9 +308,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 #else
 	for(j=0; j<BLOCKS_NUM; j++){
-		for(i=0; i<BLOCKS_NUM; i++){ 
-
-
+		for(i=0; i<BLOCKS_NUM; i++){
 
 			// C(m,n) = A(m,k) * B(k,n)
 			//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n) 
@@ -322,7 +323,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 			Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
 					i*BLOCK_SIZE, j*BLOCK_SIZE);
 			//Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_trans_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
-			//					j*BLOCK_SIZE, i*BLOCK_SIZE);			
+			//					j*BLOCK_SIZE, i*BLOCK_SIZE);
 		}
 	}
 
@@ -332,7 +333,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 
 		// C(m,n) = A(m,k) * B(k,n)
 		//gpu_blas_mmul(const double *A, const double *B, double *C, const int m, const int k, const int n)
-		gpu_blas_mmul(d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);	
+		gpu_blas_mmul(d_X_dptr[i], d_Y_dptr[j], d_P_block, (int)BLOCK_SIZE, (int)(y_rows-1), (int)BLOCK_SIZE, 1.0, 0.0);
 
 		Kernel_outbeta_P <<<dimGrid, dimBlock>>> (d_P_block, d_xtwy, d_out_beta_gpu, (int_t)BLOCK_SIZE,
 		i*BLOCK_SIZE, j*BLOCK_SIZE);
@@ -349,6 +350,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 	for(j=0; j<(y_rows-1); j++){
 		for(i=0; i<y_cols; i++){
 			out_beta_gpu[i] += h_Q[j*y_cols+i]*xtwy[y_cols+j];
+						
 			out_beta_gpu[y_cols+j] += h_Q[j*y_cols+i]*xtwy[i];
 		}
 	}
@@ -359,7 +361,7 @@ extern "C" void wls_gpu(int_t y_cols, int_t y_rows, double* wts, double* y, doub
 		}
 	}
 
-	//done
+	//done	
 
 	// Destroy the handle
 	cublasDestroy(handle);
@@ -544,15 +546,15 @@ void alloc_device_mem(int_t y_cols, int_t y_rows)
 {
 
 	//Allocate device memory for matrices
-	cudaMalloc((void**)&d_wts, 			y_cols*y_rows*sizeof(double));
+	cudaMalloc((void**)&d_wts, 		y_cols*y_rows*sizeof(double));
 	cudaMalloc((void**)&d_Ainv, 		y_cols*sizeof(double));
-	cudaMalloc((void**)&d_B, 			y_cols*(y_rows-1)*sizeof(double));
-	cudaMalloc((void**)&d_C, 			(y_rows-1)*y_cols*sizeof(double));	
+	cudaMalloc((void**)&d_B, 		y_cols*(y_rows-1)*sizeof(double));
+	cudaMalloc((void**)&d_C, 		(y_rows-1)*y_cols*sizeof(double));	
 	cudaMalloc((void**)&d_D_temp, 		CUSTOM_VAL*y_rows*sizeof(double));
 	cudaMalloc((void**)&d_AinvB, 		y_cols*(y_rows-1)*sizeof(double));
 	cudaMalloc((void**)&d_CAinvB, 		(y_rows-1)*(y_rows-1)*sizeof(double));
 	cudaMalloc((void**)&d_CAinv, 		(y_rows-1)*y_cols*sizeof(double));
-	cudaMalloc((void**)&d_Q, 			y_cols*(y_rows-1)*sizeof(double));
+	cudaMalloc((void**)&d_Q, 		y_cols*(y_rows-1)*sizeof(double));
 	cudaMalloc((void**)&d_out_beta_gpu, (y_rows+y_cols)*sizeof(double));
 	cudaMalloc((void**)&d_xtwy, 		(y_rows+y_cols)*sizeof(double));
 	cudaMalloc((void**)&d_P_block, 		BLOCK_SIZE*BLOCK_SIZE*sizeof(double));
@@ -564,7 +566,7 @@ void free_device_mem(void)
 	cudaFree(d_wts);
 	cudaFree(d_Ainv);
 	cudaFree(d_B);	
-	cudaFree(d_C);	
+	cudaFree(d_C);
 	cudaFree(d_D_temp);
 	cudaFree(d_AinvB);
 	cudaFree(d_CAinvB);
@@ -574,16 +576,6 @@ void free_device_mem(void)
 	cudaFree(d_xtwy);
 	cudaFree(d_P_block);
 	//cudaFree(d_P_trans_block);
-}
-
-const char* cublasGetErrorString(cudaError_t status)
-{
-	switch(status)
-	{
-
-
-
-	}
 }
 
 const char* cublasGetErrorString(cublasStatus_t status)

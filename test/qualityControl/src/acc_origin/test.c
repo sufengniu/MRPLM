@@ -16,7 +16,6 @@ int main(){
 	
 	struct timeval start, end;
 	long utime;	
-
 	
 	int_t y_rows = Y_ROWS;
 	int_t y_cols = Y_COLS;
@@ -44,7 +43,22 @@ int main(){
 			y[j*y_rows+i]=1.0/y[j*y_rows+i];
 		}
 	}
+/*
+	printf("test here\n");
+	//testing
+	FILE *pFile;
+	pFile=fopen("input_data", "rb");
+	rewind(pFile);
+	fread(&y_rows, sizeof(int), 1, pFile);
+	fread(&y_cols, sizeof(int), 1, pFile);	
+	if((y_rows != Y_ROWS)||(y_cols != Y_COLS)){
+		printf("y_rows is %d, y_cols is %d, size doesn't match\n", y_rows, y_cols);
+		exit(3);
+	}
 
+	fread(wts, sizeof(double), y_rows*y_cols, pFile);
+	fclose(pFile);
+*/	
 #ifdef CPU_COMPUTE
 	printf("\n Starting CPU Computation\n");
 	gettimeofday(&start, NULL);
@@ -61,14 +75,22 @@ int main(){
 	XTWY(y_rows, y_cols, wts,y, xtwy);
 	printf("\nXTWY done\n");	fflush(stdout);
 
+
+
+/*	for (j=0;j<(y_rows*y_cols);j++){
+                printf("xtwx[%d]=%f, xtwy[%d]=%f\n", j, xtwx[j], j, xtwy[j]);
+        }
+*/
 	//OUT_BETA	
 	for (i=0;i < y_rows+y_cols-1; i++){
 		out_beta[i] = 0.0;
 		for (j=0;j < y_rows+y_cols -1; j++){
+
+	
 			out_beta[i] += xtwx[j*(y_rows+y_cols -1)+i]*xtwy[j];
 		}
 	}
-
+	
 	gettimeofday(&end, NULL);
 	utime = ((end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec);
 	printf("\n CPU Computation done \n");
@@ -80,10 +102,9 @@ int main(){
 	//GPU start
 	gettimeofday(&start, NULL);
 
-	for (i=0; i<10; i++){
+	for (i = 0; i<1000; i++){
 		wls_gpu(y_cols, y_rows, wts, y, out_beta_gpu);
 	}
-
 	gettimeofday(&end, NULL);
 	utime = ((end.tv_sec - start.tv_sec) * 1000000 + end.tv_usec - start.tv_usec);
 	printf("\n GPU Computation done \n");	
@@ -145,9 +166,10 @@ int main(){
 
 #ifdef CPU_COMPUTE	
 	//check for out_beta
-	double out_beta_err = 0.0;
-	for(j=0; j<(y_rows+y_cols-1); j++){
-		out_beta_err+=fabs((out_beta_gpu[j] - out_beta[j])/out_beta[j]);
+	double out_beta_err = 0.0;	
+
+	for(j=0; j<(y_rows+y_cols-1); j++){		
+		out_beta_err+=fabs(out_beta_gpu[j] - out_beta[j]);
 	}
 	out_beta_err/=(y_rows+y_cols-1);
 	printf("\nError Out_beta_error = %e\n",out_beta_err);

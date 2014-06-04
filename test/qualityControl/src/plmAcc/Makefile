@@ -8,7 +8,7 @@ CC 	= gcc
 NVCC	= nvcc
 
 CFLAGS	:= -m64 -fPIC 
-NFLAGS 	:= -m64 -arch=sm_35 -Xcompiler '-fPIC' 
+NFLAGS 	:= -m64 -arch=sm_20 -Xcompiler '-fPIC' 
 LINK	= -shared
 
 INC	= -I. -I${JAVA_HOME}/include/ -I${JAVA_HOME}/include/linux/ -I$(LA_HOME)/lapacke/include/ -I${CUDA_INSTALL_PATH}/include/ -I/home/sniu/CBLAS/include/
@@ -28,6 +28,7 @@ endif
 
 OBJS    = jniWrapper.o \
 	  cholesky_inv.o \
+	  wls.o \
 	  wls_acc.o \
 	  wls_link.o \
 	  utils.o
@@ -47,12 +48,16 @@ wls_acc.o: wls_acc.cu wls_acc.h utils.h define_t.h
 	$(NVCC) $(NFLAGS) -rdc=true -dc $< -o $@ $(INC)
 	$(NVCC) $(NFLAGS) -dlink $@ -o wls_link.o 
 
+wls.o: wls.c define_t.h
+	$(CC) $(CFLAGS) -c $< -o $@ $(INC)
+
 utils.o: utils.cpp utils.h define_t.h
 	$(CC) $(CFLAGS) -c $< -o $@ $(INC)	
 
 cp:
-	cp $(TARGET) ~/hadoop-dist/app/lib/
+	cp $(TARGET) ~/hadoop-dist/app/lib
 	cp $(TARGET) ~/hadoop-dist/hadoop/lib/
+
 clean:
 	rm -rf *.o *.so *~ test
 	rm ~/hadoop-dist/app/lib/$(TARGET) ~/hadoop-dist/hadoop/lib/$(TARGET)

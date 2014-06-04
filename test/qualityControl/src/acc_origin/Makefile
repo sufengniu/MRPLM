@@ -8,7 +8,7 @@ CC 	= gcc
 NVCC	= nvcc
 
 CFLAGS	:= -m64 
-NFLAGS 	:= -m64 -arch=sm_35
+NFLAGS 	:= -m64 -arch=sm_20
 
 INC	= -I. -I${JAVA_HOME}/include/ -I${JAVA_HOME}/include/linux/ -I$(LA_HOME)/lapacke/include/ -I${CUDA_INSTALL_PATH}/include/ -I/home/sniu/CBLAS/include/
 

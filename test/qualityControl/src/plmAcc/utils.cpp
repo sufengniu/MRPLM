@@ -11,7 +11,7 @@ void gpu_XTWY(int_t y_rows, int_t y_cols, double *wts,double *y, double *xtwy)
 		xtwy[j] = 0.0;
 
 		for (i=0; i < y_rows; i++){
-			xtwy[j] += wts[j*y_rows + i] * y[j*y_rows + i];
+			xtwy[j] += wts[j*y_rows + i] * y[j*y_rows + i];	
 		}
 	}
 

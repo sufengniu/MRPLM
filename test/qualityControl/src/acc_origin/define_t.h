@@ -6,8 +6,8 @@
 //#define BLOCKS_NUM	4	//should be divisble by TOTAL_SIZE
 //#define BLOCK_SIZE	(TOTAL_SIZE/BLOCKS_NUM)
 
-#define Y_ROWS		12
-#define Y_COLS		70000	
+#define Y_ROWS		11
+#define Y_COLS		1000	
 
 #define RANDOM_MAX	10
 #define RANDOM_MIN	5
@@ -19,7 +19,7 @@
 
 typedef long int int_t;
 
-//#define CPU_COMPUTE
+#define CPU_COMPUTE
 
 #endif
 /*end*/
