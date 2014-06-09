@@ -18,10 +18,10 @@ JNIEXPORT void JNICALL Java_affy_qualityControl_jniWrapper_wlsAcc
 /*
  * Class:     affy_qualityControl_jniWrapper
  * Method:    seAcc
- * Signature: ([DII)[D
+ * Signature: ([D[DII)[D
  */
 JNIEXPORT jdoubleArray JNICALL Java_affy_qualityControl_jniWrapper_seAcc
-  (JNIEnv *, jobject, jdoubleArray, jint, jint);
+  (JNIEnv *, jobject, jdoubleArray, jdoubleArray, jint, jint);
 
 #ifdef __cplusplus
 }
