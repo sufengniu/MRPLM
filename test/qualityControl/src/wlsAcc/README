@@ -1,0 +1,11 @@
+MAKE SURE the lapacke and lapack lib are recompiled with option -fPIC in make.inc
+
+when running with error: allocate failed
+check your nvcc compiler architecture flag -arch sm_35 for K20 GPU, sm_20 for m2075 GPU.
+
+go to make.inc file
+
+	OPTS = -O2 -frecursive -fPIC
+
+and:
+	CFLAGS = -O3 -fPIC

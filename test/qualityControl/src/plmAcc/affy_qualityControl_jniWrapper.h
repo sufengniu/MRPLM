@@ -9,19 +9,19 @@ extern "C" {
 #endif
 /*
  * Class:     affy_qualityControl_jniWrapper
- * Method:    wlsAcc
- * Signature: ([D[D[DII)V
+ * Method:    rlm_fit_anova
+ * Signature: ([DII[D[D[DDI)V
  */
-JNIEXPORT void JNICALL Java_affy_qualityControl_jniWrapper_wlsAcc
-  (JNIEnv *, jobject, jdoubleArray, jdoubleArray, jdoubleArray, jint, jint);
+JNIEXPORT void JNICALL Java_affy_qualityControl_jniWrapper_rlm_1fit_1anova
+  (JNIEnv *, jobject, jdoubleArray, jint, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdouble, jint);
 
 /*
  * Class:     affy_qualityControl_jniWrapper
- * Method:    seAcc
- * Signature: ([D[DII)[D
+ * Method:    rlm_compute_se_anova
+ * Signature: (II[D[D[D[DD)V
  */
-JNIEXPORT jdoubleArray JNICALL Java_affy_qualityControl_jniWrapper_seAcc
-  (JNIEnv *, jobject, jdoubleArray, jdoubleArray, jint, jint);
+JNIEXPORT void JNICALL Java_affy_qualityControl_jniWrapper_rlm_1compute_1se_1anova
+  (JNIEnv *, jobject, jint, jint, jdoubleArray, jdoubleArray, jdoubleArray, jdoubleArray, jdouble);
 
 #ifdef __cplusplus
 }
