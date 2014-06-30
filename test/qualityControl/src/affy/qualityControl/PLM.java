@@ -20,10 +20,19 @@ public class PLM {
             }
         }
 
+	    jniWrapper jni = new jniWrapper();
+
+	    jni.rlm_fit_anova(y, numprobes, numchips, beta, resids, weights, 1.345, 20);
+        //rlm_fit_anova(y, numprobes, numchips, beta, resids, weights, 1.345, 20);
+	    jni.rlm_compute_se_anova(numprobes, numchips, resids, weights, se, varcov, 1.345);
+	
+
+/*
         rlm_fit_anova(y, numprobes, numchips, beta, resids, weights, 1.345, 20);
-
+	
+	
         rlm_compute_se_anova(numprobes, numchips, resids, weights, se, varcov, 1.345);
-
+*/
         for (int j = 0; j < numchips; j++) {
             results[j] = beta[j];
             SEresults[j] = se[j];
@@ -50,21 +59,21 @@ public class PLM {
 
         int rows = y_rows * y_cols;
 
-		/* intially use equal weights */
+/* intially use equal weights */
         for (int i = 0; i < rows; i++) {
             weights[i] = 1.0;
         }
 
 
-		/* starting matrix */
-/*        for (int i = 0; i < y_rows; i++) {
-            for (int j = 0; j < y_cols; j++) {
-                resids[j * y_rows + i] = y[j * y_rows + i];
-            }
-        }*/
+/* starting matrix */
+/* for (int i = 0; i < y_rows; i++) {
+for (int j = 0; j < y_cols; j++) {
+resids[j * y_rows + i] = y[j * y_rows + i];
+}
+}*/
 
 
-		/* sweep columns (ie chip effects) */
+/* sweep columns (ie chip effects) */
         for (int j = 0; j < y_cols; j++) {
             out_beta[j] = 0.0;
             double sumweights = 0.0;
@@ -78,7 +87,7 @@ public class PLM {
             }
         }
 
-		/* sweep rows  (ie probe effects) */
+/* sweep rows (ie probe effects) */
         for (int i = 0; i < y_rows; i++) {
             rowmeans[i] = 0.0;
             double sumweights = 0.0;
@@ -107,33 +116,33 @@ public class PLM {
             }
 
             for (int i = 0; i < rows; i++) {
-                weights[i] = PsiFunction.huber(resids[i] / scale, psi_k, 0);  /* psi_huber(resids[i]/scale,k,0); */
+                weights[i] = PsiFunction.huber(resids[i] / scale, psi_k, 0); /* psi_huber(resids[i]/scale,k,0); */
             }
 
-			/* weighted least squares */
+/* weighted least squares */
 
             for (int i = 0; i < xtwx.length; i++) {
                 xtwx[i] = 0.0;
             }
 
             /***************** GPU offload part ***************/
-/*
-            XTWX(y_rows, y_cols, weights, xtwx);
+
+        XTWX(y_rows, y_cols, weights, xtwx);
 
 
-            XTWXinv(y_rows, y_cols, xtwx);///////////////////call cholesky decomposition
-            XTWY(y_rows, y_cols, weights, y, xtwy);
+        XTWXinv(y_rows, y_cols, xtwx);///////////////////call cholesky decomposition
+        XTWY(y_rows, y_cols, weights, y, xtwy);
 
-            for (int i = 0; i < y_rows + y_cols - 1; i++) {
-                out_beta[i] = 0.0;
-                for (int j = 0; j < y_rows + y_cols - 1; j++) {
-                    out_beta[i] += xtwx[j * (y_rows + y_cols - 1) + i] * xtwy[j];
-                }
-            }*/
-            new jniWrapper().wlsAcc(weights, y, out_beta, y_rows, y_cols);
-	   
+        for (int i = 0; i < y_rows + y_cols - 1; i++) {
+    out_beta[i] = 0.0;
+    for (int j = 0; j < y_rows + y_cols - 1; j++) {
+    out_beta[i] += xtwx[j * (y_rows + y_cols - 1) + i] * xtwy[j];
+    }
+}
+    //        new jniWrapper().wlsAcc(weights, y, out_beta, y_rows, y_cols);
 
-		/* residuals */
+
+/* residuals */
             for (int i = 0; i < y_rows - 1; i++) {
                 for (int j = 0; j < y_cols; j++) {
                     resids[j * y_rows + i] = y[j * y_rows + i] - (out_beta[j] + out_beta[i + y_cols]);
@@ -148,67 +157,16 @@ public class PLM {
                 resids[j * y_rows + y_rows - 1] = y[j * y_rows + y_rows - 1] - (out_beta[j] - endprobe);
             }
 
-			/*check convergence  based on residuals */
+/*check convergence based on residuals */
             double conv = irls_delta(old_resids, resids, rows);
 
             if (conv < acc) {
-                /*    printf("Converged \n");*/
+                /* printf("Converged \n");*/
                 break;
 
             }
         }
     }
-
-    void rlm_compute_se_anova(int y_rows, int y_cols, double[] resids,
-                              double[] weights, double[] se_estimates, double[] varcov, double psi_k) {
-
-        //double k1 = psi_k;   /*  was 1.345; */
-        //double sumpsi2=0.0;  /* sum of psi(r_i)^2 */
-		/*  double sumpsi=0.0; */
-        //double sumderivpsi=0.0; /* sum of psi'(r_i) */
-        //double Kappa=0.0;      /* A correction factor */
-        //double scale=0.0;
-        int n = y_rows * y_cols;
-        int p = y_rows + y_cols - 1;
-        double[] XTX = new double[p * p];
-        //double [] W = new double [p*p];
-        //double [] work = new double [p*p];
-        double RMSEw = 0.0;
-        //double vs=0.0,m,varderivpsi=0.0;
-        //double [] W_tmp= new double [n];
-
-
-        for (int i = 0; i < n; i++) {
-            RMSEw += weights[i] * resids[i] * resids[i];
-        }
-
-        RMSEw = Math.sqrt(RMSEw / (double) (n - p));
-        //residSE[0] =  RMSEw;
-
-        /***************** GPU offload part ***************/	
-    	XTWX(y_rows, y_cols, weights, XTX);
-        if (y_rows > 1) {
-            XTWXinv(y_rows, y_cols, XTX);
-        } else {
-            for (int i = 0; i < p; i++) {
-                XTX[i * p + i] = 1.0 / XTX[i * p + i];
-            }
-        }
-
-	
-	
-        for (int i = 0; i < p; i++) {
-            se_estimates[i] = RMSEw * Math.sqrt(XTX[i * p + i]);
-        }
-
-
-        if (varcov != null)
-            for (int i = 0; i < p; i++)
-                for (int j = i; j < p; j++)
-                    varcov[j * p + i] = RMSEw * RMSEw * XTX[j * p + i];
-
-    }
-
     private double med_abs(double[] x, int length) {
         double[] buffer = new double[length];
 
@@ -237,7 +195,7 @@ public class PLM {
 
     private void XTWY(int y_rows, int y_cols, double[] wts, double[] y, double[] xtwy) {
 
-		 /*sweep columns (ie chip effects)*/
+/*sweep columns (ie chip effects)*/
         for (int j = 0; j < y_cols; j++) {
             xtwy[j] = 0.0;
             for (int i = 0; i < y_rows; i++) {
@@ -245,7 +203,7 @@ public class PLM {
             }
         }
 
-		 /*sweep rows  (ie probe effects)*/
+/*sweep rows (ie probe effects)*/
         for (int i = y_rows - 1; i >= 0; i--) {
             xtwy[i + y_cols] = 0.0;
             for (int j = 0; j < y_cols; j++) {
@@ -261,18 +219,18 @@ public class PLM {
 
         int Msize = y_cols + y_rows - 1;
 
-	/* diagonal elements of first part of matrix ie upper partition*/
-/*        for (int j = 0; j < y_cols; j++) {
-            for (int i = 0; i < y_rows-1; i++) {
-                xtwx[j * Msize + j] += wts[j * y_rows + i];
-                xtwx[(y_cols + i) * Msize + (y_cols + i)] += wts[j * y_rows + i];
-                for (int k = i; k < y_rows - 1; k++) {
-                    xtwx[(y_cols + k) * Msize + (y_cols + i)] = xtwx[(y_cols + i) * Msize + (y_cols + k)] += wts[j * y_rows + (y_rows - 1)];
-                }
-                xtwx[j * Msize + (y_cols + i)] = xtwx[(y_cols + i) * Msize + j] = wts[j * y_rows + i] - wts[j * y_rows + (y_rows - 1)];
-            }
-            xtwx[j * Msize + j] += wts[j * y_rows + y_rows-1];
-        }*/
+/* diagonal elements of first part of matrix ie upper partition*/
+/* for (int j = 0; j < y_cols; j++) {
+for (int i = 0; i < y_rows-1; i++) {
+xtwx[j * Msize + j] += wts[j * y_rows + i];
+xtwx[(y_cols + i) * Msize + (y_cols + i)] += wts[j * y_rows + i];
+for (int k = i; k < y_rows - 1; k++) {
+xtwx[(y_cols + k) * Msize + (y_cols + i)] = xtwx[(y_cols + i) * Msize + (y_cols + k)] += wts[j * y_rows + (y_rows - 1)];
+}
+xtwx[j * Msize + (y_cols + i)] = xtwx[(y_cols + i) * Msize + j] = wts[j * y_rows + i] - wts[j * y_rows + (y_rows - 1)];
+}
+xtwx[j * Msize + j] += wts[j * y_rows + y_rows-1];
+}*/
         double sum = 0;
         for (int j = 0; j < y_cols; j++) {
             for (int i = 0; i < y_rows - 1; i++) {
@@ -318,7 +276,7 @@ public class PLM {
             }
         }
 
-   		/* Lets start making the inverse */
+    /* Lets start making the inverse */
         MatrixFunctions.Choleski_inverse(RPQ, S, work, y_rows - 1, false);
         for (int j = 0; j < y_cols; j++) {
             for (int i = 0; i < y_rows - 1; i++) {
